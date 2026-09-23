@@ -221,6 +221,36 @@
       .result-actions { margin-top: 15px; }
       canvas { height: 190px; }
     }
+
+    .app { width: min(1540px,100%); }
+    .workspace { grid-template-columns: 185px minmax(0,1fr); }
+    main { padding: 26px; }
+    .analysis-layout { grid-template-columns: 405px minmax(0,1fr); }
+    .analysis-controls .fields { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; }
+    .analysis-controls .field label { font-size:12px; }
+    .field.wide { grid-column:1/-1; }
+    .field.wide p { margin:0; }
+    .input-unit { display:flex; align-items:center; border:1px solid #d6dde4; border-radius:10px; background:white; }
+    .input-unit input { flex:1; min-width:0; border:0; padding:11px 8px; width:1px; font-variant-numeric:tabular-nums; }
+    .input-unit em { position:static; flex:none; padding:0 8px 0 0; font-size:11px; }
+    .input-unit:focus-within { outline:2px solid #2762a4; outline-offset:1px; }
+    .input-unit input:focus { box-shadow:none; }
+    .live-results { position:static; }
+    .live-results .metric { padding:14px; }
+    .live-results .metric-value { font-size:29px; }
+    .live-results .metric.hero .metric-value { font-size:38px; }
+    .live-results canvas { height:auto; aspect-ratio:8/3; }
+    .legend { justify-content:flex-start; margin-bottom:10px; }
+    .model-details { margin-top:16px; font-size:12px; color:#526273; }
+    .model-details summary { cursor:pointer; font-weight:700; }
+    table { border-collapse:collapse; width:100%; margin-top:15px; font-variant-numeric:tabular-nums; }
+    th,td { border-bottom:1px solid #dfe4e9; padding:7px; text-align:left; }
+    caption { text-align:left; font-weight:700; }
+    .control-note.error { background:#fff0ef; border-color:#c13c3c; color:#8c2727; }
+    @media(max-width:1200px){ .workspace{grid-template-columns:1fr;} aside{display:none;} }
+    @media(max-width:980px){ .analysis-layout{grid-template-columns:380px minmax(0,1fr);} }
+    @media(max-width:800px){ .analysis-layout{grid-template-columns:1fr;} }
+    @media(max-width:420px){ main{padding:16px;} .analysis-controls .fields{grid-template-columns:1fr;} }
   </style>
 </head>
 <body>
@@ -232,7 +262,7 @@
           <div>
             <p class="eyebrow">CHIP thermal lab</p>
             <h1>CHIP Temp &amp; Power Analyzer</h1>
-            <p>依投影片經驗公式建立的互動式估算流程</p>
+            <p>五段 RC · ACP / ACN · Source bias</p>
           </div>
         </div>
         <div class="status"><span class="status-dot"></span>模型已就緒</div>
@@ -250,30 +280,20 @@
 
         <main>
           <section class="view active" id="view-0">
-            <div class="view-head"><div><h2>說明資料</h2><p>先看懂投影片裡的經驗公式與時序，再把實際 panel 條件帶入估算。</p></div><span class="section-tag">Slide-derived model</span></div>
-            <div class="intro-grid">
-              <article class="panel">
-                <h3>CHIP 溫度經驗公式</h3>
-                <p class="panel-sub">Power consumption 越高，估算出的 CHIP Temp 越高。</p>
-                <div class="formula"><span>T</span>(CHIP Temp) ≈ <span>X</span> + <span>Y</span> × <span>P</span></div>
-                <div class="rule-list">
-                  <div class="rule"><div class="rule-icon">↘</div><div><b>SR 越快</b><span>AC power consumption 越低，B 區域的 ΔV 更快縮小。</span></div></div>
-                  <div class="rule"><div class="rule-icon">R</div><div><b>ROUTSW + RESD 越小</b><span>等效電阻下降，on-chip power consumption 越低。</span></div></div>
-                  <div class="rule"><div class="rule-icon">↕</div><div><b>PWRC / DBC 改變</b><span>DC power 上升時，AC power 可能下降，兩者形成 trade off。</span></div></div>
-                </div>
-                <div class="callout">X、Y 取決於 CHIP 架構。這個網頁提供可調整的預設值，適合做前期比較與趨勢判讀。</div>
-              </article>
-              <article class="panel">
-                <h3>Power consumption 時序</h3>
-                <p class="panel-sub">把投影片中的三個區段轉成可讀的模擬流程。</p>
-                <div class="flow">
-                  <div class="flow-row"><div class="flow-time">phase 01</div><div class="flow-copy"><b>純 DC</b><span>由 PWRC、DBC 與 frame rate 決定基礎 DC power。</span></div></div>
-                  <div class="flow-row"><div class="flow-time">phase 02</div><div class="flow-copy"><b>AC + DC / rising</b><span>M9 的 ΔV 造成近似線性的 AC power 區段。</span></div></div>
-                  <div class="flow-row"><div class="flow-time">phase 03</div><div class="flow-copy"><b>AC + DC / rising</b><span>panel RC 充電時，電流與 power 逐步上升。</span></div></div>
-                </div>
-                <div class="callout">下一步會輸入 panel loading、resolution、SR、電阻與 bias code，然後產出溫度。</div>
-              </article>
-            </div>
+            <div class="view-head"><div><h2>說明資料</h2><p>先看懂投影片裡的經驗公式與時序，再把實際 panel 條件帶入估算。</p></div><span class="section-tag">5-section RC ideal model</span></div>
+<div class="intro-grid">
+<article class="panel"><h3>五段 RC 與 CHIP 溫度</h3><p class="panel-sub">ACP、ACN 先求單 channel 平均功率，再以 channel 數加總。</p>
+<div class="formula">T ≈ X + Y × (AC + DC)</div>
+<div class="rule-list">
+<div class="rule"><div class="rule-icon">R</div><div><b>ROUTSW + RESD</b><span>晶片內電阻功率 p(t)＝i(t)² × (ROUTSW + RESD)。RWOA 與 Panel R 的熱不計入 CHIP。</span></div></div>
+<div class="rule"><div class="rule-icon">5</div><div><b>3 kΩ、200 pF 分為五段</b><span>每段串聯 600 Ω、對地 40 pF；保留相鄰 line 的電容狀態。</span></div></div>
+<div class="rule"><div class="rule-icon">P</div><div><b>960 channels，P／N 各 480</b><span>每 line 一次 8.6 V 跳變。P 9.2↔17.8 V，N 8.8↔0.2 V；下降與上升的電阻耗能都計入。</span></div></div>
+</div><div class="callout">Ideal model 使用理想電壓階躍，未包含 output transistor 額外耗散、有限 SR 或 SRE。PWRC／DBC 只改變 bias，不再任意縮放 AC。</div></article>
+<article class="panel"><h3>Power consumption 時序</h3><p class="panel-sub">保留投影片階段說明；目前計算模式為理想 RC。</p><div class="flow">
+<div class="flow-row"><div class="flow-time">phase 01</div><div class="flow-copy"><b>純 DC</b><span>其他電路固定 54 mW，另加 Source bias。</span></div></div>
+<div class="flow-row"><div class="flow-time">phase 02</div><div class="flow-copy"><b>AC + DC / rising</b><span>理想階躍驅動 RC。每 line 的平均功率由 I²R 積分計算。</span></div></div>
+<div class="flow-row"><div class="flow-time">phase 03</div><div class="flow-copy"><b>AC + DC / rising</b><span>電容電壓繼續上升，充電電流與電阻功耗逐漸衰減。</span></div></div>
+</div><div class="callout">Line time＝1／(Frame rate × Resolution height)。每 line 內含 0.2 μs blanking，期間保持 Source 低 bias。DBC_W 以完整 line time 為分母。</div></article></div>
             <div class="footer-actions"><span></span><button class="btn primary" data-next>開始即時分析 <span aria-hidden="true">→</span></button></div>
           </section>
 
@@ -281,56 +301,19 @@
             <div class="view-head"><div><h2>即時分析</h2><p>左側調整 panel 與 power 變數，右側會即時重算溫度、AC / DC power 與輸出曲線。</p></div><span class="live-status"><span class="status-dot"></span>Live update</span></div>
             <div class="analysis-layout">
               <div class="analysis-controls">
-                <div class="control-note"><b>Loading model</b> 已整合在本頁。每次輸入改變時，模型會立即套用 <b>T = X + Y × P</b>。</div>
-                <form id="analysis-form">
-                  <div class="form-grid">
-                    <article class="form-panel">
-                      <h3>Panel &amp; display</h3><p>resolution 與 panel loading 會影響 RC 充電量。</p>
-                      <div class="fields">
-                        <div class="field"><label for="panelLoading">Panel loading</label><div class="input-unit"><input id="panelLoading" type="number" min="100" step="100" value="3200"><em>pF</em></div></div>
-                        <div class="field"><label for="frameRate">Frame rate</label><div class="input-unit"><input id="frameRate" type="number" min="1" max="480" step="1" value="60"><em>Hz</em></div></div>
-                        <div class="field"><label for="resW">Resolution width</label><div class="input-unit"><input id="resW" type="number" min="320" step="1" value="1920"><em>px</em></div></div>
-                        <div class="field"><label for="resH">Resolution height</label><div class="input-unit"><input id="resH" type="number" min="240" step="1" value="1080"><em>px</em></div></div>
-                      </div>
-                    </article>
-                    <article class="form-panel">
-                      <h3>AC path</h3><p>對應投影片中的 SR、ROUTSW、RESD 與 RWOA。</p>
-                      <div class="fields">
-                        <div class="field"><label for="riseTime">Rising time</label><div class="input-unit"><input id="riseTime" type="number" min="1" step="1" value="1"><em>ns</em></div></div>
-                        <div class="field"><label for="srPreset">SR preset</label><select id="srPreset"><option value="1">Fast · 1 ns</option><option value="1000">Slow · 1 us</option><option value="custom">Custom</option></select></div>
-                        <div class="field"><label for="routsw">ROUTSW</label><div class="input-unit"><input id="routsw" type="number" min="1" step="1" value="600"><em>Ω</em></div></div>
-                        <div class="field"><label for="resd">RESD</label><div class="input-unit"><input id="resd" type="number" min="1" step="0.1" value="82.3"><em>Ω</em></div></div>
-                        <div class="field"><label for="rwoa">RWOA</label><div class="input-unit"><input id="rwoa" type="number" min="0" step="1" value="0"><em>Ω</em></div></div>
-                      </div>
-                    </article>
-                    <article class="form-panel">
-                      <h3>Bias &amp; calibration</h3><p>PWRC / DBC 影響 DC power；X / Y 用於溫度換算。</p>
-                      <div class="fields">
-                        <div class="field"><label for="pwrc">PWRC</label><select id="pwrc"><option>000</option><option>001</option><option>010</option><option>011</option><option selected>100</option><option>101</option><option>110</option><option>111</option></select></div>
-                        <div class="field"><label for="dbc">DBC</label><select id="dbc"><option>000</option><option>001</option><option>010</option><option>011</option><option selected>100</option><option>101</option><option>110</option><option>111</option></select></div>
-                        <div class="field"><label for="xBase">X base temp</label><div class="input-unit"><input id="xBase" type="number" step="0.1" value="25"><em>°C</em></div></div>
-                        <div class="field"><label for="ySlope">Y temp slope</label><div class="input-unit"><input id="ySlope" type="number" min="0" step="0.001" value="0.08"><em>°C/mW</em></div></div>
-                        <div class="field toggle-row"><div class="toggle-copy"><b>SRE</b><span>啟用 SR compensation</span></div><label class="switch"><input id="sre" type="checkbox" checked><span class="slider"></span></label></div>
-                      </div>
-                    </article>
-                    <article class="form-panel"><h3>Model note</h3><p>此頁以投影片裡的趨勢建立前期估算，並非 SPICE / silicon sign-off。</p><div class="callout" style="margin-top:0">若已有實測溫度，可調整 X 與 Y 讓公式貼近該 CHIP 架構，再觀察右側曲線。</div></article>
-                  </div>
-                </form>
+                <div class="control-note" id="model-status" role="status">五段 RC 計算中…</div>
+                <form id="analysis-form"><div class="form-grid"><article class="form-panel"><h3>Panel &amp; timing</h3><p>五段等分 RC。每 line 跳一次；P／N 各半，RWOA 每 channel 獨立。</p><div class="fields"><div class="field"><label for="panelR">Panel loading R</label><div class="input-unit"><input id="panelR" type="number" value="3000" step="any" min=".001" required aria-describedby="unit-panelR"><em id="unit-panelR">Ω</em></div></div><div class="field"><label for="panelC">Panel loading C</label><div class="input-unit"><input id="panelC" type="number" value="200" step="any" min=".001" required aria-describedby="unit-panelC"><em id="unit-panelC">pF</em></div></div><div class="field"><label for="channels">Channel Number</label><div class="input-unit"><input id="channels" type="number" value="960" step="2" min="2" required aria-describedby="unit-channels"><em id="unit-channels">CH</em></div></div><div class="field"><label for="frameRate">Frame rate</label><div class="input-unit"><input id="frameRate" type="number" value="60" step="any" min=".001" required aria-describedby="unit-frameRate"><em id="unit-frameRate">Hz</em></div></div><div class="field"><label for="resW">Resolution width</label><div class="input-unit"><input id="resW" type="number" value="1920" step="1" min="1" required aria-describedby="unit-resW"><em id="unit-resW">px</em></div></div><div class="field"><label for="resH">Resolution height</label><div class="input-unit"><input id="resH" type="number" value="1080" step="1" min="1" required aria-describedby="unit-resH"><em id="unit-resH">lines</em></div></div><div class="field wide"><p>Resolution height 為有效列數。每 line 內含固定 0.2 μs blanking；width 作為顯示規格，不套用面積倍率。</p></div></div></article><article class="form-panel"><h3>AC ideal model</h3><p>理想階躍；只計 ROUTSWP/N 與 RESD 的 I²R。Panel 與 RWOA 的耗能屬晶片外。</p><div class="fields"><div class="field"><label for="routswP">ROUTSWP</label><div class="input-unit"><input id="routswP" type="number" value="600" step="any" min="0" required aria-describedby="unit-routswP"><em id="unit-routswP">Ω</em></div></div><div class="field"><label for="routswN">ROUTSWN</label><div class="input-unit"><input id="routswN" type="number" value="600" step="any" min="0" required aria-describedby="unit-routswN"><em id="unit-routswN">Ω</em></div></div><div class="field"><label for="resd">RESD</label><div class="input-unit"><input id="resd" type="number" value="100" step="any" min="0" required aria-describedby="unit-resd"><em id="unit-resd">Ω</em></div></div><div class="field"><label for="rwoa">RWOA / channel</label><div class="input-unit"><input id="rwoa" type="number" value="1" step="any" min="0" required aria-describedby="unit-rwoa"><em id="unit-rwoa">Ω</em></div></div><div class="field"><label for="deltaVP">ΔVP / transition</label><div class="input-unit"><input id="deltaVP" type="number" value="8.6" step="any" min="0" required aria-describedby="unit-deltaVP"><em id="unit-deltaVP">V</em></div></div><div class="field"><label for="deltaVN">ΔVN / transition</label><div class="input-unit"><input id="deltaVN" type="number" value="8.6" step="any" min="0" required aria-describedby="unit-deltaVN"><em id="unit-deltaVN">V</em></div></div></div></article><article class="form-panel"><h3>DC &amp; Source bias</h3><p>非 Source 固定功耗＝18 V × 3 mA＝54 mW，整顆 CHIP 僅計一次。</p><div class="fields"><div class="field"><label for="pwrc">PWRC</label><select id="pwrc"><option value="0">000 · 120%</option><option value="1">001 · 100%</option><option value="2">010 · 90%</option><option value="3">011 · 80%</option><option value="4" selected>100 · 60%</option><option value="5">101 · 50%</option><option value="6">110 · 45%</option><option value="7">111 · 40%</option></select></div><div class="field"><label for="dbcDrv">DBC_DRV</label><select id="dbcDrv"><option value="0" selected>00 · 5×</option><option value="1">01 · 3×</option><option value="2">10 · 9×</option><option value="3">11 · 7×</option></select></div><div class="field"><label for="dbcEnabled">DBC boost</label><select id="dbcEnabled"><option value="1" selected>啟用 DBC_W</option><option value="0">停用</option></select></div><div class="field"><label for="dbcDuty">DBC_W / line</label><div class="input-unit"><input id="dbcDuty" type="number" value="10" step="any" min="0" max="100" required aria-describedby="unit-dbcDuty"><em id="unit-dbcDuty">%</em></div></div><div class="field"><label for="opUA">OP 基準電流</label><div class="input-unit"><input id="opUA" type="number" value="7" step="any" min="0" required aria-describedby="unit-opUA"><em id="unit-opUA">μA</em></div></div><div class="field"><label for="sourceV">Source 供應電壓</label><div class="input-unit"><input id="sourceV" type="number" value="18" step="any" min="0" required aria-describedby="unit-sourceV"><em id="unit-sourceV">V</em></div></div><div class="field wide"><p>每 channel 一顆 OP。DBC=0：7 μA × PWRC；DBC=1：再乘 DBC_DRV 倍率。Blanking 保持 Source 低 bias，其他電路固定 54 mW。</p></div></div></article><article class="form-panel"><h3>Temperature calibration</h3><p>T＝X＋Y × (AC＋DC)，功率單位為 mW。</p><div class="fields"><div class="field"><label for="thermalMode">係數用途</label><select id="thermalMode"><option value="demo" selected>示範係數</option><option value="measured">已填實測係數</option></select></div><div class="field"><label>示範基準</label><button type="button" class="btn secondary" id="demo-calibrate">目前條件設為 50°C</button></div><div class="field"><label for="xBase">X / intercept</label><div class="input-unit"><input id="xBase" type="number" value="25" step="any" aria-describedby="unit-xBase"><em id="unit-xBase">°C</em></div></div><div class="field"><label for="ySlope">Y / slope</label><div class="input-unit"><input id="ySlope" type="number" value="0.077021862" step="any" min="0" aria-describedby="unit-ySlope"><em id="unit-ySlope">°C/mW</em></div></div><div class="field wide"><p>預設 X=25、Y≈0.077022，使預設功耗對應約 50°C。Y 固定，調整參數後溫度隨功耗變動。示範結果未經實測校正。</p></div></div></article></div></form>
                 <div class="footer-actions compact-actions"><button class="btn secondary" data-prev>← 回到說明</button><button class="btn secondary" data-reset>恢復預設值</button></div>
               </div>
-              <div class="live-results">
-                <div class="metric-grid">
-                  <div class="metric hero"><div class="metric-label">Estimated CHIP Temp</div><div class="metric-value"><span id="metric-temp">—</span> <span class="metric-unit">°C</span></div><div class="metric-note" id="temp-note">T = X + Y × total power</div></div>
-                  <div class="metric"><div class="metric-label">Total power</div><div class="metric-value"><span id="metric-total">—</span> <span class="metric-unit">mW</span></div><div class="metric-note">AC + DC average</div></div>
-                  <div class="metric"><div class="metric-label">AC power</div><div class="metric-value"><span id="metric-ac">—</span> <span class="metric-unit">mW</span></div><div class="metric-note">SR / ROUTSW path</div></div>
-                  <div class="metric"><div class="metric-label">DC power</div><div class="metric-value"><span id="metric-dc">—</span> <span class="metric-unit">mW</span></div><div class="metric-note">PWRC / DBC bias</div></div>
-                </div>
-                <div class="result-grid">
-                  <article class="chart-panel"><div class="chart-head"><div><h3>Power over one frame</h3><p>即時示意 rising、falling 與 DC baseline。</p></div><div class="legend"><span><i style="background:#2762a4"></i>AC</span><span><i style="background:#d94a4a"></i>DC</span><span><i style="background:#218b68"></i>Total</span></div></div><canvas id="powerChart" width="700" height="240" aria-label="Power over one frame chart"></canvas></article>
-                  <article class="chart-panel"><div class="chart-head"><div><h3>Scenario comparison</h3><p>目前條件與投影片中的兩個 ideal model 對照。</p></div></div><canvas id="scenarioChart" width="600" height="240" aria-label="Scenario comparison chart"></canvas></article>
-                </div>
-                <div class="insight"><h3>分析摘要</h3><p id="insight-text">—</p></div>
-              </div>
+              <div class="live-results"><div class="metric-grid"><div class="metric hero"><div class="metric-label">Estimated CHIP Temp</div><div class="metric-value"><span id="metric-temp">—</span> <span class="metric-unit">°C</span></div><div class="metric-note" id="temp-note">待校正與 Source 換算</div></div><div class="metric"><div class="metric-label">Total power</div><div class="metric-value"><span id="metric-total">—</span> <span class="metric-unit">mW</span></div><div class="metric-note">AC + 全部 DC</div></div><div class="metric"><div class="metric-label">AC / CHIP</div><div class="metric-value"><span id="metric-ac">—</span> <span class="metric-unit">mW</span></div><div class="metric-note">480 × ACP + 480 × ACN</div></div><div class="metric"><div class="metric-label">ACP / channel</div><div class="metric-value"><span id="metric-acp">—</span> <span class="metric-unit">mW</span></div><div class="metric-note">P 側單 channel 平均</div></div><div class="metric"><div class="metric-label">ACN / channel</div><div class="metric-value"><span id="metric-acn">—</span> <span class="metric-unit">mW</span></div><div class="metric-note">N 側單 channel 平均</div></div><div class="metric"><div class="metric-label">Source DC</div><div class="metric-value"><span id="metric-source">—</span> <span class="metric-unit">mW</span></div><div class="metric-note">7 μA / OP，依 PWRC 與 DBC 加權</div></div><div class="metric"><div class="metric-label">Other DC</div><div class="metric-value"><span id="metric-fixed">—</span> <span class="metric-unit">mW</span></div><div class="metric-note">18 V × 3 mA，整顆 CHIP</div></div></div><div class="result-grid">
+<article class="chart-panel"><div class="chart-head"><div><h3>Power over one line</h3><p id="timing-note">時間 μs，功率 mW；包含 RC 跳變後的實際瞬時尖峰。</p></div></div><div class="legend"><span><i style="background:#2762a4"></i>AC</span><span><i style="background:#d94a4a"></i>DC</span><span><i style="background:#218b68"></i>Total</span></div><canvas id="powerChart" width="800" height="300" role="img" aria-label="每 line 功率曲線"></canvas></article>
+<article class="chart-panel"><div class="chart-head"><div><h3>Panel far-end voltage</h3><p>兩條連續 line 的週期穩態響應；以各自低電位為 0 V，顯示電壓變化。</p></div></div><div class="legend"><span><i style="background:#2762a4"></i>P 相對電壓</span><span><i style="background:#a265ae"></i>N 相對電壓</span></div><canvas id="voltageChart" width="800" height="300" role="img" aria-label="P 與 N 面板末端電壓曲線"></canvas></article>
+</div><div class="insight"><h3>計算明細</h3><p id="insight-text"></p></div>
+<details class="model-details"><summary>公式、比例表與模型假設</summary>
+<p>Rstage＝Panel R / 5；Cstage＝Panel C / 5。五個電容節點各自滿足 Cstage × dv/dt＝流入電流−流出電流。使用週期穩態解與解析積分，不假設每 line 已完全充電。</p>
+<p>ACP＝∫ iP² × (ROUTSWP + RESD) dt / Tline。ACN 同理。AC＝(ACP + ACN) × Channel Number / 2。積分涵蓋完整 line；本模型 RC 通路持續連接。</p>
+<p>Source DC＝Vsource × Channel Number × IOP基準 × PWRC比例 × [(1−D)＋D × DBC_DRV倍率]。IOP基準=7 μA，D=DBC啟用時間 / Tline。DBC 在每 line 開始時啟用 DBC_W，啟用時間最多為有效時間；blanking 保持低 bias。DBC 停用時 D=0。3 mA 固定電流不受 PWRC／DBC 影響。</p>
+<table><caption>PWRC 比例</caption><thead><tr><th>Code</th><th>Ratio</th></tr></thead><tbody><tr><td>000</td><td>120%</td></tr><tr><td>001</td><td>100%</td></tr><tr><td>010</td><td>90%</td></tr><tr><td>011</td><td>80%</td></tr><tr><td>100</td><td>60%</td></tr><tr><td>101</td><td>50%</td></tr><tr><td>110</td><td>45%</td></tr><tr><td>111</td><td>40%</td></tr></tbody></table><table><caption>DBC_DRV 與 DRABIAS</caption><thead><tr><th>Code</th><th>Ratio</th><th>DBC=0</th><th>DBC=1</th></tr></thead><tbody><tr><td>00</td><td>5×</td><td>12 μA</td><td>60 μA</td></tr><tr><td>01</td><td>3×</td><td>20 μA</td><td>60 μA</td></tr><tr><td>10</td><td>9×</td><td>6.7 μA</td><td>60 μA</td></tr><tr><td>11</td><td>7×</td><td>8.5 μA</td><td>60 μA</td></tr></tbody></table><p>DRABIAS 電流欄保留作為參考，本模型採確認後的 5／3／9／7 倍套用到單顆 OP 的 7 μA 基準，並非直接把 12／60 μA 當成 OP 供應電流。</p></details></div>
             </div>
           </section>
         </main>
@@ -338,102 +321,214 @@
     </div>
   </div>
   <script>
-    const $ = (id) => document.getElementById(id);
-    const views = [...document.querySelectorAll('.view')];
-    const steps = [...document.querySelectorAll('.step')];
-    let currentStep = 0;
-    let result = null;
-
-    function setStep(next) {
-      currentStep = next;
-      views.forEach((v, i) => v.classList.toggle('active', i === next));
-      steps.forEach((s, i) => { s.classList.toggle('active', i === next); s.classList.toggle('done', i < next); });
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+/* Five equal series-R / shunt-C sections; periodic ideal steps, SI internally. */
+const IdealModel = (() => {
+  const PWRC = [1.2, 1, .9, .8, .6, .5, .45, .4];
+  const DBC = [
+    { code: '00', ratio: 5, lowUA: 12, highUA: 60 },
+    { code: '01', ratio: 3, lowUA: 20, highUA: 60 },
+    { code: '10', ratio: 9, lowUA: 6.7, highUA: 60 },
+    { code: '11', ratio: 7, lowUA: 8.5, highUA: 60 }
+  ];
+  // Jacobi eigendecomposition of the real symmetric RC decay matrix.
+  function eigen(matrix) {
+    const a = matrix.map(r => [...r]), n = a.length;
+    const q = Array.from({ length: n }, (_, i) => Array.from({ length: n }, (_, j) => +(i === j)));
+    for (let iter = 0; iter < 300; iter++) {
+      let p = 0, r = 1, largest = 0;
+      for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) {
+        if (Math.abs(a[i][j]) > largest) { largest = Math.abs(a[i][j]); p = i; r = j; }
+      }
+      const scale = Math.max(...a.map((row, i) => Math.abs(row[i])));
+      if (largest <= scale * 1e-14) break;
+      const theta = .5 * Math.atan2(2 * a[p][r], a[r][r] - a[p][p]);
+      const c = Math.cos(theta), s = Math.sin(theta);
+      const pp = a[p][p], rr = a[r][r], pr = a[p][r];
+      a[p][p] = c*c*pp - 2*s*c*pr + s*s*rr;
+      a[r][r] = s*s*pp + 2*s*c*pr + c*c*rr;
+      a[p][r] = a[r][p] = 0;
+      for (let k = 0; k < n; k++) {
+        if (k !== p && k !== r) {
+          const kp = a[k][p], kr = a[k][r];
+          a[k][p] = a[p][k] = c*kp - s*kr;
+          a[k][r] = a[r][k] = s*kp + c*kr;
+        }
+        const qp = q[k][p], qr = q[k][r];
+        q[k][p] = c*qp - s*qr; q[k][r] = s*qp + c*qr;
+      }
     }
-
-    function value(id) { return Number($(id).value) || 0; }
-    function clamp(n, min, max) { return Math.max(min, Math.min(max, n)); }
-    function readInputs() {
-      return {
-        panel: Math.max(100, value('panelLoading')), frame: Math.max(1, value('frameRate')),
-        width: Math.max(320, value('resW')), height: Math.max(240, value('resH')),
-        rise: Math.max(1, value('riseTime')), routsw: Math.max(1, value('routsw')),
-        resd: Math.max(1, value('resd')), rwoa: Math.max(0, value('rwoa')),
-        pwrc: parseInt($('pwrc').value, 2), dbc: parseInt($('dbc').value, 2),
-        x: value('xBase'), y: value('ySlope'), sre: $('sre').checked
-      };
+    const lambda = a.map((r, i) => r[i]);
+    if (lambda.some(v => !Number.isFinite(v) || v <= 0)) throw new Error('RC 條件超出可計算範圍。');
+    return { lambda, q };
+  }
+  function path({ panelR, panelC, routsw, resd, rwoa, deltaV, lineTime }) {
+    const n = 5, rs = panelR / n, cs = panelC * 1e-12 / n;
+    const chipR = routsw + resd, firstR = chipR + rwoa + rs;
+    const g = 1 / rs, g0 = 1 / firstR;
+    const matrix = Array.from({ length: n }, () => Array(n).fill(0));
+    for (let i = 0; i < n; i++) {
+      matrix[i][i] = ((i === 0 ? g0 : g) + (i < n - 1 ? g : 0)) / cs;
+      if (i < n - 1) matrix[i][i+1] = matrix[i+1][i] = -g / cs;
     }
-
-    function calculate(d) {
-      const area = (d.width * d.height) / (1920 * 1080);
-      const load = d.panel / 3200;
-      const frame = d.frame / 60;
-      const riseRatio = clamp(Math.log10(d.rise) / 3, 0, 1);
-      const srFactor = 0.70 + (riseRatio * 0.30);
-      const switchFactor = clamp(Math.sqrt(d.routsw / 600), 0.42, 1.55);
-      const resdFactor = clamp(0.92 + (d.resd / 82.3) * 0.08, 0.85, 1.28);
-      const loadFactor = 0.90 + (Math.sqrt(load) * 0.10);
-      const areaFactor = Math.pow(area, 0.12);
-      const biasLevel = d.pwrc + d.dbc;
-      const compensation = d.sre ? (1 - Math.min(biasLevel * 0.012, 0.18)) : 1;
-      const ac = 18 * srFactor * switchFactor * resdFactor * loadFactor * areaFactor * frame * compensation * (1 + d.rwoa / 3000);
-      const dc = (6.8 + d.pwrc * 0.72 + d.dbc * 0.52) * Math.pow(area, 0.08) * frame;
-      const total = ac + dc;
-      const temp = d.x + d.y * total;
-      return { ac, dc, total, temp, area, load, frame, biasLevel, riseRatio };
+    const { lambda, q } = eigen(matrix);
+    // In periodic steady state, each eigenmode has residual 1/(1+exp(-lambda*L)).
+    const coeff = lambda.map((l, j) => q.reduce((sum, row) => sum + row[j], 0) / (1 + Math.exp(-l * lineTime)));
+    const modes = q.map(row => row.map((v, j) => v * coeff[j]));
+    const currentModes = modes[0].map(v => deltaV * v / firstR);
+    function integralSquared(weights) {
+      let sum = 0;
+      for (let j = 0; j < n; j++) for (let k = 0; k < n; k++) {
+        const decay = lambda[j] + lambda[k];
+        sum += weights[j] * weights[k] * -Math.expm1(-decay * lineTime) / decay;
+      }
+      return Math.max(0, sum);
     }
-
-    function fmt(n, digits = 1) { return Number(n).toFixed(digits); }
-    function drawLineChart(canvas, data) {
-      const ctx = canvas.getContext('2d'); const w = canvas.width; const h = canvas.height;
-      ctx.clearRect(0,0,w,h); const pad = { l: 42, r: 16, t: 16, b: 28 };
-      const max = Math.max(...data.total, ...data.dc) * 1.16; const min = 0;
-      ctx.strokeStyle = '#e5e9ee'; ctx.lineWidth = 1; ctx.font = '11px Segoe UI'; ctx.fillStyle = '#84909c';
-      for (let i = 0; i <= 4; i++) { const y = pad.t + (h-pad.t-pad.b) * (i/4); ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(w-pad.r,y); ctx.stroke(); ctx.fillText(fmt(max - (max-min)*i/4,0), 5, y+4); }
-      ctx.strokeStyle = '#cfd7df'; ctx.beginPath(); ctx.moveTo(pad.l,pad.t); ctx.lineTo(pad.l,h-pad.b); ctx.lineTo(w-pad.r,h-pad.b); ctx.stroke();
-      const x = (i) => pad.l + (w-pad.l-pad.r) * (i/(data.ac.length-1));
-      const y = (v) => h-pad.b - ((v-min)/(max-min))*(h-pad.t-pad.b);
-      function line(values, color, width) { ctx.strokeStyle = color; ctx.lineWidth = width; ctx.beginPath(); values.forEach((v,i)=>{ const px=x(i), py=y(v); i?ctx.lineTo(px,py):ctx.moveTo(px,py); }); ctx.stroke(); }
-      line(data.ac, '#2762a4', 2.6); line(data.dc, '#d94a4a', 2.2); line(data.total, '#218b68', 2.6);
-      ctx.fillStyle = '#84909c'; ctx.fillText('0%', pad.l-7, h-8); ctx.fillText('50%', w/2-11, h-8); ctx.fillText('100%', w-pad.r-22, h-8);
+    const currentIntegral = integralSquared(currentModes);
+    const energyJ = chipR * currentIntegral;
+    let panelEnergyJ = rs * currentIntegral;
+    for (let i = 1; i < n; i++) {
+      const branch = modes[i].map((v,j) => deltaV * (v - modes[i-1][j]) / rs);
+      panelEnergyJ += rs * integralSquared(branch);
     }
+    const residual = (node,t) => modes[node].reduce((sum,v,j) => sum+v*Math.exp(-lambda[j]*t),0);
+    return {
+      energyJ, averageMW: energyJ / lineTime * 1000,
+      externalEnergyJ: panelEnergyJ + rwoa * currentIntegral,
+      slowTau: 1 / Math.min(...lambda), fastTau: 1 / Math.max(...lambda),
+      settleError: residual(n-1,lineTime),
+      powerMW(t) { const i = currentModes.reduce((sum,v,j) => sum+v*Math.exp(-lambda[j]*t),0); return i*i*chipR*1000; },
+      fraction(t) { return 1-residual(n-1,t); }
+    };
+  }
+  function calculate(d) {
+    const lineTime = 1 / (d.frameRate * d.resH);
+    const blankTime = d.blankUS * 1e-6;
+    if (!(lineTime > blankTime)) throw new Error('Line time 必須大於 blanking time。');
+    if (d.channels % 2) throw new Error('Channel Number 必須為偶數，P／N 各半。');
+    const base = { panelR:d.panelR, panelC:d.panelC, resd:d.resd, rwoa:d.rwoa, lineTime };
+    const p = path({ ...base, routsw:d.routswP, deltaV:d.deltaVP });
+    const n = path({ ...base, routsw:d.routswN, deltaV:d.deltaVN });
+    const acP = p.averageMW*d.channels/2, acN = n.averageMW*d.channels/2;
+    const ac = acP+acN, fixedDC = d.fixedMA*d.fixedV;
+    const ratio = PWRC[d.pwrc], entry = DBC[d.dbcDrv];
+    const activeTime = lineTime-blankTime;
+    const boostTime = d.dbcEnabled ? Math.min(d.dbcDuty/100*lineTime, activeTime) : 0;
+    const biasTime = d.blankBiasOff ? activeTime : lineTime;
+    // OP supply current baseline is 7 uA at PWRC=100%; the table supplies boost ratios.
+    const lowMA = d.opUA*ratio*d.channels/1000;
+    const highMA = lowMA*entry.ratio;
+    const sourceDC = d.sourceV*(lowMA*(biasTime-boostTime)+highMA*boostTime)/lineTime;
+    const dc = fixedDC+sourceDC;
+    const total = ac+dc;
+    const temperature = d.xBase !== null && d.ySlope !== null ? d.xBase+d.ySlope*total : null;
+    if (![ac,dc,total,temperature??0].every(Number.isFinite)) throw new Error('輸入數值過大，請降低參數範圍。');
+    return { p,n,acP,acN,ac,fixedDC,sourceDC,dc,total,temperature,lineTime,activeTime,boostTime,ratio,entry,
+      dcAt(t) {
+        const mA = d.blankBiasOff && t>=activeTime ? 0 : (t<boostTime ? highMA : lowMA);
+        return fixedDC+d.sourceV*mA;
+      }
+    };
+  }
+  return { PWRC, DBC, path, calculate };
+})();
+if (typeof module !== 'undefined') module.exports = IdealModel;
 
-    function drawBars(canvas, bars) {
-      const ctx = canvas.getContext('2d'); const w=canvas.width,h=canvas.height; ctx.clearRect(0,0,w,h);
-      const pad={l:34,r:16,t:17,b:42}; const max=Math.max(...bars.map(b=>b.value))*1.22;
-      ctx.strokeStyle='#e5e9ee'; ctx.lineWidth=1; ctx.font='11px Segoe UI'; ctx.fillStyle='#84909c';
-      for(let i=0;i<=4;i++){const y=pad.t+(h-pad.t-pad.b)*(i/4);ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(w-pad.r,y);ctx.stroke();ctx.fillText(fmt(max-(max*i/4),0),5,y+4);}
-      const slot=(w-pad.l-pad.r)/bars.length; bars.forEach((b,i)=>{const bw=Math.min(70,slot*.56);const x=pad.l+slot*i+(slot-bw)/2;const bh=(b.value/max)*(h-pad.t-pad.b);const y=h-pad.b-bh;ctx.fillStyle=b.color;ctx.beginPath();ctx.roundRect(x,y,bw,bh,7);ctx.fill();ctx.fillStyle='#495968';ctx.textAlign='center';ctx.fillText(fmt(b.value,1),x+bw/2,y-7);ctx.fillText(b.label,x+bw/2,h-17);ctx.textAlign='left';});
+const $ = id => document.getElementById(id);
+const form = $('analysis-form');
+let currentResult = null, pendingFrame = null;
+const optional = new Set(['xBase','ySlope']);
+const fmt = (x,d=2) => x === null ? '—' : Number(x).toFixed(d);
+function readInputs() {
+  const d = { blankUS:.2, fixedMA:3, fixedV:18, blankBiasOff:false };
+  for (const input of form.querySelectorAll('input[type=number]')) {
+    input.removeAttribute('aria-invalid');
+    if (input.value === '' && optional.has(input.id)) { d[input.id]=null; continue; }
+    if (!input.validity.valid || !Number.isFinite(input.valueAsNumber)) {
+      input.setAttribute('aria-invalid','true');
+      throw new Error(`${document.querySelector('label[for="'+input.id+'"]').textContent}：請輸入範圍內的有效數值。`);
     }
+    d[input.id]=input.valueAsNumber;
+  }
+  d.pwrc=Number($('pwrc').value); d.dbcDrv=Number($('dbcDrv').value);
+  d.dbcEnabled=$('dbcEnabled').value==='1';
+  return d;
+}
+function setStep(next) {
+  document.querySelectorAll('.view').forEach((v,i)=>v.classList.toggle('active',i===next));
+  document.querySelectorAll('.step').forEach((v,i)=>{v.classList.toggle('active',i===next);v.classList.toggle('done',i<next);});
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function chart(canvas, times, series, unit) {
+  const ctx=canvas.getContext('2d'), w=canvas.width, h=canvas.height;
+  ctx.clearRect(0,0,w,h);
+  const left=62,right=18,top=28,bottom=43, pw=w-left-right, ph=h-top-bottom;
+  const usable=series.filter(s=>s.values !== null);
+  const max=Math.max(1e-6,...usable.flatMap(s=>s.values))*1.1;
+  ctx.font='13px Segoe UI'; ctx.fillStyle='#536273'; ctx.fillText(unit,8,17);
+  for(let i=0;i<=4;i++) {
+    const y=top+i*ph/4; ctx.strokeStyle='#e5e9ee';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(w-right,y);ctx.stroke();
+    ctx.textAlign='right';ctx.fillText(fmt(max*(1-i/4),max<10?2:0),left-8,y+4);
+  }
+  const end=times[times.length-1];
+  ctx.textAlign='center';for(let i=0;i<=4;i++)ctx.fillText(fmt(end*i/4*1e6,2),left+pw*i/4,h-19);
+  ctx.textAlign='right';ctx.fillText('μs',w-3,h-19);
+  for(const s of usable){
+    ctx.strokeStyle=s.color;ctx.lineWidth=2.4;ctx.beginPath();
+    s.values.forEach((v,i)=>{ const x=left+times[i]/end*pw, y=top+ph*(1-v/max); i?ctx.lineTo(x,y):ctx.moveTo(x,y); });ctx.stroke();
+  }
+  ctx.textAlign='left';
+}
+function render(d,r) {
+  const demo=$('thermalMode').value==='demo';
+  const values={'metric-temp':r.temperature,'metric-total':r.total,'metric-ac':r.ac,'metric-acp':r.p.averageMW,'metric-acn':r.n.averageMW,'metric-source':r.sourceDC,'metric-fixed':r.fixedDC};
+  for(const [id,v] of Object.entries(values))$(id).textContent=fmt(v,id==='metric-temp'?1:id==='metric-acp'||id==='metric-acn'?4:2);
+  $('metric-ac').closest('.metric').querySelector('.metric-note').textContent=`${d.channels/2} × ACP + ${d.channels/2} × ACN`;
+  $('metric-source').closest('.metric').querySelector('.metric-note').textContent=`${fmt(d.opUA,2)} μA / OP，依 PWRC 與 DBC 加權`;
+  $('temp-note').textContent=r.temperature===null?'請填入 X、Y':`${demo?'示範，未經實測校正':'使用輸入的校正係數'} · ${fmt(d.xBase)} + ${fmt(d.ySlope,6)} × ${fmt(r.total)} mW`;
+  const notices=[];
+  notices.push('AC、DC 已依目前參數更新。');
+  if(d.dbcEnabled && d.dbcDuty/100*r.lineTime>r.activeTime)notices.push('DBC_W 超過有效時間，啟用時段已限制在 blanking 前。');
+  if(Math.max(r.p.settleError,r.n.settleError)>.01)notices.push('Panel 在一條 line 內尚未完全到位，結果已採連續切換的週期穩態。');
+  $('model-status').textContent=notices.join(' ');$('model-status').classList.remove('error');
+  $('timing-note').textContent=`Line ${fmt(r.lineTime*1e6,4)} μs；有效 ${fmt(r.activeTime*1e6,4)} μs；DBC ${fmt(r.boostTime*1e6,4)} μs。${r.dc===null?'DC／Total 尚待換算，暫不繪製。':''}`;
+  // Dense near the RC transient; also sample either side of DC switching boundaries.
+  const ts=new Set([0,r.lineTime]);
+  for(let i=1;i<260;i++) {ts.add(r.lineTime*i/260);ts.add(r.lineTime*(i/260)**3);}
+  for(const b of [r.boostTime,r.activeTime])if(b>0&&b<r.lineTime){ts.add(Math.max(0,b-r.lineTime*1e-9));ts.add(b);}
+  const times=[...ts].sort((a,b)=>a-b);
+  const ac=times.map(t=>(r.p.powerMW(t)+r.n.powerMW(t))*d.channels/2);
+  const dc=r.dc===null?null:times.map(t=>r.dcAt(t));
+  chart($('powerChart'),times,[{values:ac,color:'#2762a4'},{values:dc,color:'#d94a4a'},{values:dc?ac.map((v,i)=>v+dc[i]):null,color:'#218b68'}],'mW');
+  const vt=times.concat(times.slice(1).map(t=>t+r.lineTime));
+  const pv=vt.map(t=>d.deltaVP*(t<=r.lineTime?r.p.fraction(t):1-r.p.fraction(t-r.lineTime)));
+  const nv=vt.map(t=>d.deltaVN*(t<=r.lineTime?1-r.n.fraction(t):r.n.fraction(t-r.lineTime)));
+  chart($('voltageChart'),vt,[{values:pv,color:'#2762a4'},{values:nv,color:'#a265ae'}],'V');
+  $('powerChart').setAttribute('aria-label',`整顆 CHIP 平均 AC ${fmt(r.ac)} mW，DC ${fmt(r.dc)} mW；每 line ${fmt(r.lineTime*1e6)} μs`);
+  $('insight-text').textContent=`每段 ${fmt(d.panelR/5)} Ω、${fmt(d.panelC/5)} pF。P／N 各 ${d.channels/2} CH；ACP ${fmt(r.p.averageMW,4)}、ACN ${fmt(r.n.averageMW,4)} mW/CH。單次晶片內能量 P ${fmt(r.p.energyJ*1e9,4)}、N ${fmt(r.n.energyJ*1e9,4)} nJ。PWRC ${d.pwrc.toString(2).padStart(3,'0')}＝${fmt(r.ratio*100,0)}%；DBC_DRV ${r.entry.code}＝${r.entry.ratio}×，單顆 OP 的低／高電流＝${fmt(d.opUA*r.ratio)}／${fmt(d.opUA*r.ratio*r.entry.ratio)} μA。Other DC 固定 54 mW。${demo?'溫度使用示範係數，不代表實測溫度。':''}`;
+}
+function update() {
+  try {
+    const d=readInputs(); let r=IdealModel.calculate(d);
+    currentResult={d,r}; render(d,r);
+  } catch(e) {
+    currentResult=null;$('model-status').textContent=e.message+' 輸出暫停，修正後自動更新。';$('model-status').classList.add('error');
+    document.querySelectorAll('.metric-value span[id]').forEach(el=>el.textContent='—');
+    $('temp-note').textContent='待有效輸入';$('insight-text').textContent='';$('timing-note').textContent='待有效輸入';
+    document.querySelectorAll('canvas').forEach(c=>{c.getContext('2d').clearRect(0,0,c.width,c.height);c.setAttribute('aria-label','待有效輸入');});
+  }
+}
+function schedule(){if(pendingFrame!==null)cancelAnimationFrame(pendingFrame);pendingFrame=requestAnimationFrame(()=>{pendingFrame=null;update();});}
+form.addEventListener('input',schedule);form.addEventListener('change',schedule);form.addEventListener('submit',e=>e.preventDefault());
+document.querySelector('[data-next]').addEventListener('click',()=>{setStep(1);update();});
+document.querySelector('[data-prev]').addEventListener('click',()=>setStep(0));
+document.querySelector('[data-reset]').addEventListener('click',()=>{form.reset();update();});
+$('demo-calibrate').addEventListener('click',()=>{
+  if(!currentResult || currentResult.r.total<=0){$('model-status').textContent='請先填妥有效功耗條件，才能建立 50°C 示範基準。';return;}
+  $('thermalMode').value='demo';$('xBase').value='25';$('ySlope').value=(25/currentResult.r.total).toPrecision(8);update();
+});
+update();
 
-    function renderResult(d, r) {
-      $('metric-temp').textContent = fmt(r.temp, 1); $('metric-total').textContent=fmt(r.total,1); $('metric-ac').textContent=fmt(r.ac,1); $('metric-dc').textContent=fmt(r.dc,1);
-      $('temp-note').textContent = `T = ${fmt(d.x,1)} + ${fmt(d.y,3)} × ${fmt(r.total,1)}`;
-      const points = 25; const ac=[],dc=[],total=[]; for(let i=0;i<points;i++){ const t=i/(points-1); const rise=Math.min(t/.2,1); const fall=t<.2?0:Math.exp(-(t-.2)*4.2); const v=r.ac*(0.22+0.68*rise*fall); ac.push(v); dc.push(r.dc); total.push(v+r.dc); }
-      drawLineChart($('powerChart'), {ac,dc,total});
-      const faster = calculate({...d, rise: 1}); const smaller = calculate({...d, routsw: 100}); const noSre = calculate({...d, sre: false});
-      drawBars($('scenarioChart'), [{label:'current',value:r.total,color:'#218b68'},{label:'1 ns',value:faster.total,color:'#2762a4'},{label:'100 Ω',value:smaller.total,color:'#d94a4a'},{label:'SRE off',value:noSre.total,color:'#8d6a9f'}]);
-      const srSentence = d.rise <= 10 ? `目前 ${fmt(d.rise,0)} ns 的 SR 讓 AC power 維持在較低區間` : `目前 ${fmt(d.rise,0)} ns 的 SR 讓 AC power 高於 1 ns 快速邊緣`;
-      const biasSentence = d.biasLevel >= 8 ? 'PWRC + DBC 偏高，DC power 已成為主要的溫升來源。' : '目前 bias code 尚未讓 DC power 佔主導。';
-      $('insight-text').innerHTML = `${srSentence}。<strong>${biasSentence}</strong> ${d.sre ? 'SRE 已開啟，因此 bias 提高時模型會對 AC power 做部分補償。' : 'SRE 關閉，因此 AC power 不會隨 bias 做補償。'} 這次估算的 panel loading 為 <strong>${fmt(d.panel,0)} pF</strong>、resolution 為 <strong>${d.width} × ${d.height}</strong>。`;
-    }
-
-    function updateLiveResult() {
-      const d = readInputs();
-      result = { d, r: calculate(d) };
-      renderResult(result.d, result.r);
-    }
-
-    document.querySelector('[data-next]').addEventListener('click',()=>{ updateLiveResult(); setStep(1); });
-    document.querySelector('[data-prev]').addEventListener('click',()=>setStep(0));
-    document.querySelectorAll('#analysis-form input, #analysis-form select').forEach(field => {
-      field.addEventListener('input', updateLiveResult);
-      field.addEventListener('change', updateLiveResult);
-    });
-    document.querySelectorAll('[data-reset]').forEach(b=>b.addEventListener('click',()=>{ $('analysis-form').reset(); $('srPreset').value='1'; updateLiveResult(); }));
-    $('riseTime').addEventListener('input',()=>{ const v=Number($('riseTime').value); $('srPreset').value = v === 1 ? '1' : (v === 1000 ? '1000' : 'custom'); updateLiveResult(); });
-    $('srPreset').addEventListener('change',()=>{if($('srPreset').value!=='custom') $('riseTime').value=$('srPreset').value; updateLiveResult();});
-    updateLiveResult();
   </script>
 </body>
 </html>
