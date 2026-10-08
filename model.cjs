@@ -17,6 +17,35 @@ const IdealModel = (() => {
     minFactor: .35,
     sreBiasMultiplier: 1.25
   };
+  // Reference points transcribed from the supplied measurement and simulation
+  // screenshots. They are used for calibration only; the RC solver remains
+  // the source of the live estimate.
+  const MEASURED_TEMPERATURES = [
+    { mode: 'default', hstripe: 112.8, white: 45.4 },
+    { mode: 'LL', hstripe: 112.6, white: 45.0 },
+    { mode: 'LH', hstripe: 111.0, white: 45.6 },
+    { mode: 'HL', hstripe: 111.8, white: 45.7 }
+  ].map(x => ({ ...x, acRise: x.hstripe - x.white }));
+  const SIMULATION_RESULTS = [
+    { frequencyKHz: 140, panelR: 6000, panelC: 400, staticMA: [8.0, 8.2], dynamicMA: [75.0, 80.0] },
+    { frequencyKHz: 280, panelR: 6000, panelC: 400, staticMA: [9.0, 9.4], dynamicMA: [133.0, 112.7] }
+  ].map(x => ({
+    ...x,
+    staticAvgMA: x.staticMA.reduce((a,b) => a+b, 0) / x.staticMA.length,
+    dynamicAvgMA: x.dynamicMA.reduce((a,b) => a+b, 0) / x.dynamicMA.length,
+    acAvgMA: x.dynamicMA.reduce((a,b) => a+b, 0) / x.dynamicMA.length - x.staticMA.reduce((a,b) => a+b, 0) / x.staticMA.length
+  }));
+  const MEASURED_AVG = {
+    hstripe: MEASURED_TEMPERATURES.reduce((s,x) => s+x.hstripe, 0) / MEASURED_TEMPERATURES.length,
+    white: MEASURED_TEMPERATURES.reduce((s,x) => s+x.white, 0) / MEASURED_TEMPERATURES.length
+  };
+  MEASURED_AVG.acRise = MEASURED_AVG.hstripe - MEASURED_AVG.white;
+  function measuredCalibration(dcPower, totalPower) {
+    const span = totalPower - dcPower;
+    if (!(span > 0)) return { x: null, y: null };
+    const y = MEASURED_AVG.acRise / span;
+    return { x: MEASURED_AVG.white - y * dcPower, y };
+  }
   const clamp = (x, lo, hi) => Math.max(lo, Math.min(hi, x));
   // Jacobi eigendecomposition of the real symmetric RC decay matrix.
   function eigen(matrix) {
@@ -130,12 +159,13 @@ const IdealModel = (() => {
       deltaFactor, deltaReduction:1-deltaFactor, acReductionPercent:(1-deltaFactor*deltaFactor)*100,
       loadRatio, loadSeverity, loadMultiplier, pwrcReduction, dbcReduction, sreReduction, rawReduction,
       dbcActivity, sreEnabled, sreBiasMultiplier, lowMA, highMA, referenceSourceDC, dcIncreasePercent,
+      measuredCalibration: measuredCalibration(dc, total),
       dcAt(t) {
         const mA = d.blankBiasOff && t>=activeTime ? 0 : (t<boostTime ? highMA : lowMA);
         return fixedDC+d.sourceV*mA;
       }
     };
   }
-  return { PWRC, DBC, path, calculate };
+  return { PWRC, DBC, DELTA_CAL, MEASURED_TEMPERATURES, MEASURED_AVG, SIMULATION_RESULTS, measuredCalibration, path, calculate };
 })();
 if (typeof module !== 'undefined') module.exports = IdealModel;

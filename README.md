@@ -34,6 +34,15 @@ Default 60 Hz / 1080-line results at PWRC=100 (60%), DBC_DRV=00 (5×), DBC_W=10%
 
 This ideal model excludes finite slew rate and output-transistor losses beyond the on-chip series resistors; it is not a full transistor-level simulation.
 
+## Supplied calibration references
+
+The page includes the supplied reference points as a calibration aid:
+
+- Measured H-stripe (AC+DC) averages: 112.8, 112.6, 111.0, 111.8 °C for default, LL, LH, HL; White (DC) averages: 45.4, 45.0, 45.6, 45.7 °C. The four-point means are 112.05 °C and 45.425 °C, so the mean AC temperature rise is 66.625 °C.
+- Simulation at 6 kΩ / 400 pF: 140 kHz STATIC 8.0/8.2 mA and DYNAMIC 75.0/80.0 mA; 280 kHz STATIC 9.0/9.4 mA and DYNAMIC 133.0/112.7 mA. The displayed AC component is DYNAMIC minus STATIC after averaging the two columns.
+
+The “套用量測平均校正” button maps the current model's DC and AC+DC power to the measured means using a two-point linear fit. It should only be used when the model frequency, panel loading, voltage, and operating mode match the measurement setup.
+
 ## Verification
 
 Run `node model.test.cjs`. Tests cover energy conservation, an independent RK4 reference for settled and incompletely settled transitions, voltage and channel scaling, duty and ratio mappings, dynamic ΔV behavior for DBC/SRE/PWRC/heavy loading, fixed power and timing validation. `model.cjs` mirrors the solver embedded in the standalone HTML.
