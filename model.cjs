@@ -1,6 +1,9 @@
 /* Five equal series-R / shunt-C sections; periodic ideal steps, SI internally. */
 const IdealModel = (() => {
-  const PWRC = [1.2, 1, .9, .8, .6, .5, .45, .4];
+  // Confirmed codes from the supplied data: 000=100%, 100=200%,
+  // 101=180%, 110=160%. Other codes retain the earlier table values until
+  // their silicon settings are provided.
+  const PWRC = [1.0, 1, .9, .8, 2.0, 1.8, 1.6, .4];
   const DBC = [
     { code: '00', ratio: 5, lowUA: 12, highUA: 60 },
     { code: '01', ratio: 3, lowUA: 20, highUA: 60 },
@@ -21,25 +24,29 @@ const IdealModel = (() => {
   // screenshots. They are used for calibration only; the RC solver remains
   // the source of the live estimate.
   const MEASURED_TEMPERATURES = [
-    { mode: 'default', hstripe: 112.8, white: 45.4 },
-    { mode: 'LL', hstripe: 112.6, white: 45.0 },
-    { mode: 'LH', hstripe: 111.0, white: 45.6 },
-    { mode: 'HL', hstripe: 111.8, white: 45.7 }
+    { mode: 'default', pwrc: 'P=100% / N=120%', hstripe: 112.8, white: 45.4 },
+    { mode: 'LL', pwrc: '100 (200%)', hstripe: 112.6, white: 45.0 },
+    { mode: 'LH', pwrc: '101 (180%)', hstripe: 111.0, white: 45.6 },
+    { mode: 'HL', pwrc: '110 (160%)', hstripe: 111.8, white: 45.7 }
   ].map(x => ({ ...x, acRise: x.hstripe - x.white }));
   const SIMULATION_RESULTS = [
-    { frequencyKHz: 140, panelR: 6000, panelC: 400, staticMA: [8.0, 8.2], dynamicMA: [75.0, 80.0] },
-    { frequencyKHz: 280, panelR: 6000, panelC: 400, staticMA: [9.0, 9.4], dynamicMA: [133.0, 112.7] }
+    { frequencyKHz: 140, pwrc: '000 (100%)', panelR: 6000, panelC: 400, specStaticMA: 8.0, simulationStaticMA: 8.2, specDynamicMA: 75.0, simulationDynamicMA: 80.0 },
+    { frequencyKHz: 280, pwrc: '000 (100%)', panelR: 6000, panelC: 400, specStaticMA: 9.0, simulationStaticMA: 9.4, specDynamicMA: 133.0, simulationDynamicMA: 112.7 }
   ].map(x => ({
     ...x,
-    staticAvgMA: x.staticMA.reduce((a,b) => a+b, 0) / x.staticMA.length,
-    dynamicAvgMA: x.dynamicMA.reduce((a,b) => a+b, 0) / x.dynamicMA.length,
-    acAvgMA: x.dynamicMA.reduce((a,b) => a+b, 0) / x.dynamicMA.length - x.staticMA.reduce((a,b) => a+b, 0) / x.staticMA.length
+    staticAvgMA: x.simulationStaticMA,
+    dynamicAvgMA: x.simulationDynamicMA,
+    acAvgMA: x.simulationDynamicMA - x.simulationStaticMA
   }));
   const SIMULATION_SUMMARY = {
     panelR: 6000, panelC: 400,
     frequencyRatio: SIMULATION_RESULTS[1].frequencyKHz / SIMULATION_RESULTS[0].frequencyKHz,
     acCurrentRatio: SIMULATION_RESULTS[1].acAvgMA / SIMULATION_RESULTS[0].acAvgMA,
     acFrequencyExponent: Math.log2(SIMULATION_RESULTS[1].acAvgMA / SIMULATION_RESULTS[0].acAvgMA)
+  };
+  const MEASUREMENT_SETUP = {
+    panelR: 8000, panelC: 180, frameRate: 165, resW: 3840, resH: 1920,
+    pwrc: 0, dbcDrv: 0, dbcEnabled: true, dbcWidthNS: 280, sreEnabled: false
   };
   const MEASURED_AVG = {
     hstripe: MEASURED_TEMPERATURES.reduce((s,x) => s+x.hstripe, 0) / MEASURED_TEMPERATURES.length,
@@ -130,7 +137,8 @@ const IdealModel = (() => {
     if (d.channels % 2) throw new Error('Channel Number 必須為偶數，P／N 各半。');
     const ratio = PWRC[d.pwrc], entry = DBC[d.dbcDrv];
     const activeTime = lineTime-blankTime;
-    const boostTime = d.dbcEnabled ? Math.min(d.dbcDuty/100*lineTime, activeTime) : 0;
+    const requestedBoostTime = Number.isFinite(d.dbcWidthNS) ? d.dbcWidthNS * 1e-9 : d.dbcDuty/100*lineTime;
+    const boostTime = d.dbcEnabled ? Math.min(requestedBoostTime, activeTime) : 0;
     const biasTime = d.blankBiasOff ? activeTime : lineTime;
     const dbcActivity = d.dbcEnabled ? boostTime/lineTime : 0;
     const sreEnabled = Boolean(d.sreEnabled);
@@ -172,6 +180,6 @@ const IdealModel = (() => {
       }
     };
   }
-  return { PWRC, DBC, DELTA_CAL, MEASURED_TEMPERATURES, MEASURED_AVG, SIMULATION_RESULTS, SIMULATION_SUMMARY, measuredCalibration, path, calculate };
+  return { PWRC, DBC, DELTA_CAL, MEASURED_TEMPERATURES, MEASURED_AVG, SIMULATION_RESULTS, SIMULATION_SUMMARY, MEASUREMENT_SETUP, measuredCalibration, path, calculate };
 })();
 if (typeof module !== 'undefined') module.exports = IdealModel;

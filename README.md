@@ -6,31 +6,31 @@ Open `index.html` directly in a browser. It has no external dependencies. Inputs
 
 ## Electrical model
 
-- Five equal series-R / shunt-C panel sections: default total 3 kΩ and 200 pF, or 600 Ω and 40 pF per section.
+- Five equal series-R / shunt-C panel sections: page default total 8 kΩ and 180 pF for the supplied 85-inch panel, or 1.6 kΩ and 36 pF per section.
 - ROUTSWP/N = 600 Ω, RESD = 100 Ω, independent RWOA = 1 Ω per channel. Only ROUTSW + RESD resistor losses count as chip AC heat.
 - P/N each serve 480 of 960 channels. Base ΔVP/ΔVN defaults to 8.6 V, while effective ΔV is dynamically reduced by PWRC, DBC, SRE, and panel RC loading. The model uses the periodic RC state, including incomplete settling, and analytically integrates I²R across each line.
 - `Tline = 1 / (frame rate × active resolution height)`. The 0.2 μs blanking interval is included within the line. Source low bias remains enabled in blanking; the ideal RC path stays connected.
 - Source low current per OP = 7 μA × PWRC ratio. DBC high current multiplies that value by the DBC_DRV ratio. One OP per channel, powered at 18 V.
-- PWRC 000–111: 120%, 100%, 90%, 80%, 60%, 50%, 45%, 40%.
-- DBC_DRV 00/01/10/11: 5×/3×/9×/7×. DBC_W is a percentage of the full line. Boost begins at line start and ends before blanking. Source DC uses the time-weighted current, including the low-bias remainder.
+- Confirmed PWRC codes: 000=100%, 100=200%, 101=180%, 110=160%. Other codes retain the earlier table values until measured settings are provided.
+- DBC_DRV 00/01/10/11: 5×/3×/9×/7×. The supplied measurement uses DBC_DRV=00 and DBC_W=280 ns; the live model accepts both duration and percentage, with duration taking priority. Boost begins at line start and ends before blanking. Source DC uses the time-weighted current, including the low-bias remainder.
 - Other circuits draw a fixed 3 mA at 18 V: 54 mW per chip, counted once.
 - SRE and DBC increase Source bias while reducing effective ΔV. The UI exposes the reduction and heavy-load sensitivity coefficients as slide-derived calibration approximations until measured ΔV tables are available.
 - Resolution width is metadata. It does not implicitly set channel count or scale power.
 
-Default 60 Hz / 1080-line results at PWRC=100 (60%), DBC_DRV=00 (5×), DBC_W=10%:
+Page default 165 Hz / 1920-line results at PWRC=000 (100%), DBC_DRV=00 (5×), DBC_W=280 ns:
 
 | Quantity | Value |
 | --- | ---: |
-| ACP / channel | 0.151510839 mW |
-| ACN / channel | 0.151510839 mW |
-| Total chip AC | 145.450405 mW |
-| Source DC | 101.606400 mW |
+| ACP / channel | 0.370111204 mW |
+| ACN / channel | 0.370111204 mW |
+| Total chip AC | 355.306756 mW |
+| Source DC | 163.878543 mW |
 | Other DC | 54.000000 mW |
-| Total power | 301.056805 mW |
+| Total power | 573.185300 mW |
 
 ## Temperature
 
-`T = X + Y × (AC + DC)`, power in mW. Default X=25 °C and Y=0.077021862 °C/mW are **demonstration values**, chosen to produce about 50 °C at the default operating point. Y stays fixed when inputs change. Replace them with measured calibration coefficients before interpreting temperature as a prediction.
+`T = X + Y × (AC + DC)`, power in mW. The page defaults to the supplied two-point measurement fit, X=4.569717 °C and Y=0.18751403 °C/mW, which maps the default DC and AC+DC powers to the measured White and H-stripe means. Replace them when the operating point changes.
 
 This ideal model excludes finite slew rate and output-transistor losses beyond the on-chip series resistors; it is not a full transistor-level simulation.
 
@@ -39,9 +39,10 @@ This ideal model excludes finite slew rate and output-transistor losses beyond t
 The page includes the supplied reference points as a calibration aid:
 
 - Measured H-stripe (AC+DC) averages: 112.8, 112.6, 111.0, 111.8 °C for default, LL, LH, HL; White (DC) averages: 45.4, 45.0, 45.6, 45.7 °C. The four-point means are 112.05 °C and 45.425 °C, so the mean AC temperature rise is 66.625 °C.
-- Simulation at 6 kΩ / 400 pF: 140 kHz STATIC 8.0/8.2 mA and DYNAMIC 75.0/80.0 mA; 280 kHz STATIC 9.0/9.4 mA and DYNAMIC 133.0/112.7 mA. The displayed AC component is DYNAMIC minus STATIC after averaging the two columns.
+- Simulation at 6 kΩ / 400 pF and PWRC=000 (100%), using the right-hand simulation column only: 140 kHz STATIC 8.2 mA and DYNAMIC 80.0 mA (AC 71.8 mA); 280 kHz STATIC 9.4 mA and DYNAMIC 112.7 mA (AC 103.3 mA).
+- Measurement setup: 85-inch panel, 8 kΩ / 180 pF, 165 Hz, 3840×1920, DBC 5× with DBC_W=280 ns, SRE disabled. The default page inputs and measured two-point temperature coefficients use this setup directly.
 
-The “套用量測平均校正” button maps the current model's DC and AC+DC power to the measured means using a two-point linear fit. It should only be used when the model frequency, panel loading, voltage, and operating mode match the measurement setup.
+The page directly applies the measured setup and two-point coefficients. The coefficients map the model's DC and AC+DC power to the measured means and should be replaced when the voltage or operating mode changes.
 
 ## Verification
 
