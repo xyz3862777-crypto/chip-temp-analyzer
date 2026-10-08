@@ -1,9 +1,9 @@
 /* Five equal series-R / shunt-C sections; periodic ideal steps, SI internally. */
 const IdealModel = (() => {
-  // Confirmed codes from the supplied data: 000=100%, 100=200%,
-  // 101=180%, 110=160%. Other codes retain the earlier table values until
+  // Confirmed codes from the supplied data: 000=100%, 001=80%, 010=60%,
+  // 100=200%, 101=180%, 110=160%. Other codes retain the earlier table values until
   // their silicon settings are provided.
-  const PWRC = [1.0, 1, .9, .8, 2.0, 1.8, 1.6, .4];
+  const PWRC = [1.0, .8, .6, .8, 2.0, 1.8, 1.6, .4];
   const DBC = [
     { code: '00', ratio: 5, lowUA: 12, highUA: 60 },
     { code: '01', ratio: 3, lowUA: 20, highUA: 60 },
@@ -25,9 +25,9 @@ const IdealModel = (() => {
   // the source of the live estimate.
   const MEASURED_TEMPERATURES = [
     { mode: 'default', pwrc: 'P=100% / N=120%', hstripe: 112.8, white: 45.4 },
-    { mode: 'LL', pwrc: '100 (200%)', hstripe: 112.6, white: 45.0 },
-    { mode: 'LH', pwrc: '101 (180%)', hstripe: 111.0, white: 45.6 },
-    { mode: 'HL', pwrc: '110 (160%)', hstripe: 111.8, white: 45.7 }
+    { mode: 'LL', pwrc: '000 (100%)', hstripe: 112.6, white: 45.0 },
+    { mode: 'LH', pwrc: '001 (80%)', hstripe: 111.0, white: 45.6 },
+    { mode: 'HL', pwrc: '010 (60%)', hstripe: 111.8, white: 45.7 }
   ].map(x => ({ ...x, acRise: x.hstripe - x.white }));
   const SIMULATION_RESULTS = [
     { frequencyKHz: 140, pwrc: '000 (100%)', panelR: 6000, panelC: 400, specStaticMA: 8.0, simulationStaticMA: 8.2, specDynamicMA: 75.0, simulationDynamicMA: 80.0 },
@@ -45,7 +45,7 @@ const IdealModel = (() => {
     acFrequencyExponent: Math.log2(SIMULATION_RESULTS[1].acAvgMA / SIMULATION_RESULTS[0].acAvgMA)
   };
   const MEASUREMENT_SETUP = {
-    panelR: 8000, panelC: 180, frameRate: 165, resW: 3840, resH: 1920,
+    panelR: 8000, panelC: 180, frameRate: 180, resW: 3840, resH: 1920,
     pwrc: 0, dbcDrv: 0, dbcEnabled: true, dbcWidthNS: 280, sreEnabled: false
   };
   const MEASURED_AVG = {
