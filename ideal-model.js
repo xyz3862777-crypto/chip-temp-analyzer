@@ -35,6 +35,12 @@ const IdealModel = (() => {
     dynamicAvgMA: x.dynamicMA.reduce((a,b) => a+b, 0) / x.dynamicMA.length,
     acAvgMA: x.dynamicMA.reduce((a,b) => a+b, 0) / x.dynamicMA.length - x.staticMA.reduce((a,b) => a+b, 0) / x.staticMA.length
   }));
+  const SIMULATION_SUMMARY = {
+    panelR: 6000, panelC: 400,
+    frequencyRatio: SIMULATION_RESULTS[1].frequencyKHz / SIMULATION_RESULTS[0].frequencyKHz,
+    acCurrentRatio: SIMULATION_RESULTS[1].acAvgMA / SIMULATION_RESULTS[0].acAvgMA,
+    acFrequencyExponent: Math.log2(SIMULATION_RESULTS[1].acAvgMA / SIMULATION_RESULTS[0].acAvgMA)
+  };
   const MEASURED_AVG = {
     hstripe: MEASURED_TEMPERATURES.reduce((s,x) => s+x.hstripe, 0) / MEASURED_TEMPERATURES.length,
     white: MEASURED_TEMPERATURES.reduce((s,x) => s+x.white, 0) / MEASURED_TEMPERATURES.length
@@ -166,6 +172,6 @@ const IdealModel = (() => {
       }
     };
   }
-  return { PWRC, DBC, DELTA_CAL, MEASURED_TEMPERATURES, MEASURED_AVG, SIMULATION_RESULTS, measuredCalibration, path, calculate };
+  return { PWRC, DBC, DELTA_CAL, MEASURED_TEMPERATURES, MEASURED_AVG, SIMULATION_RESULTS, SIMULATION_SUMMARY, measuredCalibration, path, calculate };
 })();
 if (typeof module !== 'undefined') module.exports = IdealModel;

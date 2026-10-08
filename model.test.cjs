@@ -66,6 +66,7 @@ close(M.MEASURED_AVG.acRise,66.625,1e-12);
 assert.deepEqual(M.SIMULATION_RESULTS.map(x=>x.frequencyKHz),[140,280]);
 close(M.SIMULATION_RESULTS[0].acAvgMA,69.4,1e-12);
 close(M.SIMULATION_RESULTS[1].acAvgMA,113.65,1e-12);
+close(M.SIMULATION_SUMMARY.acFrequencyExponent,Math.log2(113.65/69.4),1e-12);
 const mc=M.measuredCalibration(r.dc,r.total);
 close(mc.y,M.MEASURED_AVG.acRise/(r.total-r.dc),1e-12);
 close(mc.x,M.MEASURED_AVG.white-mc.y*r.dc,1e-12);

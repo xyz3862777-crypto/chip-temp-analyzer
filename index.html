@@ -367,6 +367,12 @@ const IdealModel = (() => {
     dynamicAvgMA: x.dynamicMA.reduce((a,b) => a+b, 0) / x.dynamicMA.length,
     acAvgMA: x.dynamicMA.reduce((a,b) => a+b, 0) / x.dynamicMA.length - x.staticMA.reduce((a,b) => a+b, 0) / x.staticMA.length
   }));
+  const SIMULATION_SUMMARY = {
+    panelR: 6000, panelC: 400,
+    frequencyRatio: SIMULATION_RESULTS[1].frequencyKHz / SIMULATION_RESULTS[0].frequencyKHz,
+    acCurrentRatio: SIMULATION_RESULTS[1].acAvgMA / SIMULATION_RESULTS[0].acAvgMA,
+    acFrequencyExponent: Math.log2(SIMULATION_RESULTS[1].acAvgMA / SIMULATION_RESULTS[0].acAvgMA)
+  };
   const MEASURED_AVG = {
     hstripe: MEASURED_TEMPERATURES.reduce((s,x) => s+x.hstripe, 0) / MEASURED_TEMPERATURES.length,
     white: MEASURED_TEMPERATURES.reduce((s,x) => s+x.white, 0) / MEASURED_TEMPERATURES.length
@@ -498,7 +504,7 @@ const IdealModel = (() => {
       }
     };
   }
-  return { PWRC, DBC, DELTA_CAL, MEASURED_TEMPERATURES, MEASURED_AVG, SIMULATION_RESULTS, measuredCalibration, path, calculate };
+  return { PWRC, DBC, DELTA_CAL, MEASURED_TEMPERATURES, MEASURED_AVG, SIMULATION_RESULTS, SIMULATION_SUMMARY, measuredCalibration, path, calculate };
 })();
 if (typeof module !== 'undefined') module.exports = IdealModel;
 
@@ -582,7 +588,7 @@ function render(d,r) {
   const st = $('simulation-table-body');
   if (st) st.innerHTML = IdealModel.SIMULATION_RESULTS.map(x => `<tr><td>${x.frequencyKHz} kHz</td><td>${fmt(x.staticAvgMA,2)}</td><td>${fmt(x.dynamicAvgMA,2)}</td><td>${fmt(x.acAvgMA,2)}</td></tr>`).join('');
   const mc = r.measuredCalibration;
-  if ($('calibration-note')) $('calibration-note').textContent = `量測平均：White ${fmt(IdealModel.MEASURED_AVG.white,2)}°C、H-stripe ${fmt(IdealModel.MEASURED_AVG.hstripe,2)}°C、AC 溫升 ${fmt(IdealModel.MEASURED_AVG.acRise,2)}°C。以目前功耗（DC ${fmt(r.dc,2)} mW、AC+DC ${fmt(r.total,2)} mW）反推：X＝${fmt(mc.x,5)}°C、Y＝${fmt(mc.y,5)}°C/mW。這是兩點校正，只有在量測與目前模型條件相同時才適合直接套用。`;
+  if ($('calibration-note')) $('calibration-note').textContent = `量測平均：White ${fmt(IdealModel.MEASURED_AVG.white,2)}°C、H-stripe ${fmt(IdealModel.MEASURED_AVG.hstripe,2)}°C、AC 溫升 ${fmt(IdealModel.MEASURED_AVG.acRise,2)}°C。以目前功耗（DC ${fmt(r.dc,2)} mW、AC+DC ${fmt(r.total,2)} mW）反推：X＝${fmt(mc.x,5)}°C、Y＝${fmt(mc.y,5)}°C/mW。模擬 6 kΩ／400 pF 下，FSTB 加倍時 AC 電流比 ${fmt(IdealModel.SIMULATION_SUMMARY.acCurrentRatio,3)}×，可用近似頻率指數 α＝${fmt(IdealModel.SIMULATION_SUMMARY.acFrequencyExponent,3)} 描述。這是兩點校正，只有在量測與目前模型條件相同時才適合直接套用。`;
 }
 function update() {
   try {
