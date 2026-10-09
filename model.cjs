@@ -20,6 +20,10 @@ const IdealModel = (() => {
     minFactor: .35,
     sreBiasMultiplier: 1.25
   };
+  // Fitted against the measured AC rises (LL 67.6, LH 65.4, HL 66.1 °C)
+  // while the model's LL reference is the four-point calibrated mean rise.
+  const PWRC_DELTA_FACTORS = [1.0000, .9908, .9960];
+  const PWRC_SOURCE_CORRECTIONS = [1.0000, 1.2575, 1.6819];
   // Reference points transcribed from the supplied measurement and simulation
   // screenshots. They are used for calibration only; the RC solver remains
   // the source of the live estimate.
@@ -142,14 +146,17 @@ const IdealModel = (() => {
     const biasTime = d.blankBiasOff ? activeTime : lineTime;
     const dbcActivity = d.dbcEnabled ? boostTime/lineTime : 0;
     const sreEnabled = Boolean(d.sreEnabled);
-    const pwrcReduction = (d.pwrcDeltaReduction == null ? DELTA_CAL.pwrcReduction : d.pwrcDeltaReduction/100) * clamp((1-ratio)/.6, 0, 1);
+    const measuredDeltaFactor = PWRC_DELTA_FACTORS[d.pwrc];
+    const pwrcReduction = measuredDeltaFactor == null
+      ? (d.pwrcDeltaReduction == null ? DELTA_CAL.pwrcReduction : d.pwrcDeltaReduction/100) * clamp((1-ratio)/.6, 0, 1)
+      : 1 - measuredDeltaFactor;
     const dbcReduction = (d.dbcDeltaReduction == null ? DELTA_CAL.dbcReduction : d.dbcDeltaReduction/100) * dbcActivity * (entry.ratio/9);
     const sreReduction = sreEnabled ? (d.sreDeltaReduction == null ? DELTA_CAL.sreReduction : d.sreDeltaReduction/100) : 0;
     const loadRatio = Math.sqrt((d.panelR*d.panelC*1e-12)/(3000*200e-12));
     const loadSeverity = clamp(loadRatio-1, 0, 2);
     const loadMultiplier = 1 + (d.heavyLoadSensitivity ?? DELTA_CAL.heavyLoadSensitivity)*loadSeverity;
-    const rawReduction = (pwrcReduction + dbcReduction + sreReduction) * loadMultiplier;
-    const deltaFactor = clamp(1-rawReduction, DELTA_CAL.minFactor, 1);
+    const rawReduction = (dbcReduction + sreReduction) * loadMultiplier;
+    const deltaFactor = clamp((1-pwrcReduction) * (1-rawReduction), DELTA_CAL.minFactor, 1);
     const effectiveDeltaVP = d.deltaVP*deltaFactor;
     const effectiveDeltaVN = d.deltaVN*deltaFactor;
     const base = { panelR:d.panelR, panelC:d.panelC, resd:d.resd, rwoa:d.rwoa, lineTime };
@@ -161,14 +168,18 @@ const IdealModel = (() => {
     const sreBiasMultiplier = sreEnabled ? (d.sreBiasMultiplier ?? DELTA_CAL.sreBiasMultiplier) : 1;
     const lowMA = d.opUA*ratio*d.channels*sreBiasMultiplier/1000;
     const highMA = lowMA*entry.ratio;
-    const sourceDC = d.sourceV*(lowMA*(biasTime-boostTime)+highMA*boostTime)/lineTime;
+    const sourceDCIdeal = d.sourceV*(lowMA*(biasTime-boostTime)+highMA*boostTime)/lineTime;
+    const sourceCorrection = PWRC_SOURCE_CORRECTIONS[d.pwrc] ?? 1;
+    const sourceDC = sourceDCIdeal * sourceCorrection;
     const referenceSourceDC = d.sourceV*(d.opUA*ratio*d.channels/1000);
     const dcIncreasePercent = referenceSourceDC > 0 ? (sourceDC-referenceSourceDC)/referenceSourceDC*100 : 0;
     const dc = fixedDC+sourceDC;
     const total = ac+dc;
-    const temperature = d.xBase !== null && d.ySlope !== null ? d.xBase+d.ySlope*total : null;
+    const whiteTemperature = d.xBase !== null && d.ySlope !== null ? d.xBase+d.ySlope*dc : null;
+    const hstripeTemperature = d.xBase !== null && d.ySlope !== null ? d.xBase+d.ySlope*total : null;
+    const temperature = d.pattern === 'white' ? whiteTemperature : hstripeTemperature;
     if (![ac,dc,total,temperature??0].every(Number.isFinite)) throw new Error('輸入數值過大，請降低參數範圍。');
-    return { p,n,acP,acN,ac,fixedDC,sourceDC,dc,total,temperature,lineTime,activeTime,boostTime,ratio,entry,
+    return { p,n,acP,acN,ac,fixedDC,sourceDC,sourceDCIdeal,sourceCorrection,dc,total,temperature,whiteTemperature,hstripeTemperature,lineTime,activeTime,boostTime,ratio,entry,
       baseDeltaVP:d.deltaVP, baseDeltaVN:d.deltaVN, effectiveDeltaVP, effectiveDeltaVN,
       deltaFactor, deltaReduction:1-deltaFactor, acReductionPercent:(1-deltaFactor*deltaFactor)*100,
       loadRatio, loadSeverity, loadMultiplier, pwrcReduction, dbcReduction, sreReduction, rawReduction,
@@ -180,6 +191,6 @@ const IdealModel = (() => {
       }
     };
   }
-  return { PWRC, DBC, DELTA_CAL, MEASURED_TEMPERATURES, MEASURED_AVG, SIMULATION_RESULTS, SIMULATION_SUMMARY, MEASUREMENT_SETUP, measuredCalibration, path, calculate };
+  return { PWRC, DBC, DELTA_CAL, PWRC_DELTA_FACTORS, PWRC_SOURCE_CORRECTIONS, MEASURED_TEMPERATURES, MEASURED_AVG, SIMULATION_RESULTS, SIMULATION_SUMMARY, MEASUREMENT_SETUP, measuredCalibration, path, calculate };
 })();
 if (typeof module !== 'undefined') module.exports = IdealModel;
